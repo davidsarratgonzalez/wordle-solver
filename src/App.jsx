@@ -1,9 +1,10 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import WordInput from './components/WordInput.jsx';
 import SolverGrid from './components/SolverGrid.jsx';
 import { computePattern, ALL_GREEN } from './solver/feedback.js';
 import { Solver } from './solver/solver.js';
 import { WORDS } from './solver/words.js';
+import { ALLOWED } from './solver/allowed.js';
 import './styles/wordle.css';
 import './App.css';
 
@@ -13,7 +14,11 @@ export default function App() {
   const [solving, setSolving] = useState(false);
   const [result, setResult] = useState(null); // { won, turns }
   const [resetKey, setResetKey] = useState(0);
+  const [hardMode, setHardMode] = useState(false); // false = solutions only, true = full pool
   const timersRef = useRef([]);
+
+  // Full guess pool: solutions + allowed guesses (computed once)
+  const fullPool = useMemo(() => [...WORDS, ...ALLOWED], []);
 
   // Timing: 500ms flip + 4×100ms stagger = 900ms per row, 200ms gap between rows
   const FLIP_TIME = 900;
@@ -27,8 +32,8 @@ export default function App() {
     setResult(null);
     setSolving(true);
 
-    // Run solver synchronously (fast in JS)
-    const solver = new Solver(WORDS);
+    // Run solver — candidates are always WORDS, guess pool depends on mode
+    const solver = new Solver(WORDS, hardMode ? fullPool : null);
     const results = [];
 
     for (let turn = 1; turn <= 6; turn++) {
@@ -59,7 +64,7 @@ export default function App() {
         timersRef.current.push(doneTimer);
       }
     });
-  }, []);
+  }, [hardMode, fullPool]);
 
   const handleReset = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
@@ -84,6 +89,22 @@ export default function App() {
             Enter any valid Wordle word and watch the solver find it
           </p>
           <WordInput key={resetKey} onSolve={handleSolve} disabled={solving || !!result} />
+
+          <label className="toggle-label">
+            <input
+              type="checkbox"
+              checked={hardMode}
+              onChange={(e) => setHardMode(e.target.checked)}
+              disabled={solving}
+            />
+            <span>Extended guess pool</span>
+          </label>
+          <p className="toggle-desc">
+            {hardMode
+              ? 'Solver can guess from all 12,972 valid words'
+              : 'Solver guesses only from the 2,315 solution words'}
+          </p>
+
           {result && (
             <button className="solve-btn" onClick={handleReset} style={{ marginTop: 16 }}>
               Try another

@@ -29,10 +29,12 @@ function scoreEntropy(guess, candidates) {
 
 export class Solver {
   /**
-   * @param {string[]} words - The word list (used as both candidates and guess pool)
+   * @param {string[]} words - The solutions list (candidates)
+   * @param {string[]} [guessPool] - Optional full guess pool. If omitted, uses words.
    */
-  constructor(words) {
+  constructor(words, guessPool) {
     this.words = words;
+    this.guessPool = guessPool || null;
     this.candidates = [...words];
     this.history = [];
     this._firstGuessCache = null;
@@ -60,7 +62,7 @@ export class Solver {
       return this._firstGuessCache;
     }
 
-    const pool = this.candidates;
+    const pool = this.guessPool || this.candidates;
     const candidateSet = new Set(this.candidates);
 
     let bestScore = -Infinity;
