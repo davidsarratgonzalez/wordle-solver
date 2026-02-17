@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import WordInput from './components/WordInput.jsx';
 import SolverGrid, { ROW_DURATION } from './components/SolverGrid.jsx';
+import AssistMode from './components/AssistMode.jsx';
 import { computePattern, ALL_GREEN } from './solver/feedback.js';
 import { Solver } from './solver/solver.js';
 import { WORDS } from './solver/words.js';
@@ -9,28 +10,26 @@ import './styles/wordle.css';
 import './App.css';
 
 export default function App() {
+  const [mode, setMode] = useState('demo'); // 'demo' | 'assist'
   const [guesses, setGuesses] = useState([]);
   const [revealedCount, setRevealedCount] = useState(0);
   const [solving, setSolving] = useState(false);
   const [result, setResult] = useState(null); // { won, turns }
   const [resetKey, setResetKey] = useState(0);
-  const [hardMode, setHardMode] = useState(false); // false = solutions only, true = full pool
+  const [hardMode, setHardMode] = useState(false);
   const timersRef = useRef([]);
 
-  // Full guess pool: solutions + allowed guesses (computed once)
   const fullPool = useMemo(() => [...WORDS, ...ALLOWED], []);
 
   const ROW_GAP = 200;
   const ROW_CYCLE = ROW_DURATION + ROW_GAP;
 
   const handleSolve = useCallback((secretWord) => {
-    // Clear previous
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
     setResult(null);
     setSolving(true);
 
-    // Run solver — candidates are always WORDS, guess pool depends on mode
     const solver = new Solver(WORDS, hardMode ? fullPool : null);
     const results = [];
 
@@ -46,13 +45,11 @@ export default function App() {
     setGuesses(results);
     setRevealedCount(0);
 
-    // Reveal rows one at a time, waiting for previous flip to finish
     results.forEach((_, i) => {
       const revealAt = i * ROW_CYCLE;
       const timer = setTimeout(() => setRevealedCount(i + 1), revealAt);
       timersRef.current.push(timer);
 
-      // After last row flip finishes, show result
       if (i === results.length - 1) {
         const doneTimer = setTimeout(() => {
           const won = results[results.length - 1].pattern === ALL_GREEN;
@@ -74,60 +71,88 @@ export default function App() {
     setResetKey(k => k + 1);
   }, []);
 
-  // Enter = "Try another" when result is showing
+  const handleModeChange = useCallback((newMode) => {
+    setMode(newMode);
+    handleReset();
+  }, [handleReset]);
+
+  // Enter = "Try another" when demo result is showing
   useEffect(() => {
-    if (!result) return;
+    if (!result || mode !== 'demo') return;
     function onKey(e) {
       if (e.key === 'Enter') handleReset();
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [result, handleReset]);
+  }, [result, handleReset, mode]);
 
   return (
     <div className="app">
       <header className="app-header">
         <h1>Wordle Solver</h1>
+        <div className="mode-tabs">
+          <button
+            className={`mode-tab ${mode === 'demo' ? 'active' : ''}`}
+            onClick={() => handleModeChange('demo')}
+          >
+            Demo
+          </button>
+          <button
+            className={`mode-tab ${mode === 'assist' ? 'active' : ''}`}
+            onClick={() => handleModeChange('assist')}
+          >
+            Assistant
+          </button>
+        </div>
       </header>
 
       <main className="app-main">
-        <section className="panel panel-left">
-          <h2>Choose a word</h2>
-          <p className="panel-desc">
-            Enter any valid Wordle word and watch the solver find it
-          </p>
-          <WordInput key={resetKey} onSolve={handleSolve} disabled={solving || !!result} />
+        {mode === 'demo' ? (
+          <>
+            <section className="panel panel-left">
+              <h2>Choose a word</h2>
+              <p className="panel-desc">
+                Enter any valid Wordle word and watch the solver find it
+              </p>
+              <WordInput key={resetKey} onSolve={handleSolve} disabled={solving || !!result} />
 
-          <label className="toggle-label">
-            <input
-              type="checkbox"
-              checked={hardMode}
-              onChange={(e) => setHardMode(e.target.checked)}
-              disabled={solving}
-            />
-            <span>Extended guess pool</span>
-          </label>
-          <p className="toggle-desc">
-            {hardMode
-              ? 'Solver can guess from all 12,972 valid words'
-              : 'Solver guesses only from the 2,315 solution words'}
-          </p>
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={hardMode}
+                  onChange={(e) => setHardMode(e.target.checked)}
+                  disabled={solving || !!result}
+                />
+                <span>Extended guess pool</span>
+              </label>
+              <p className="toggle-desc">
+                {hardMode
+                  ? 'Solver can guess from all 12,972 valid words'
+                  : 'Solver guesses only from the 2,315 solution words'}
+              </p>
 
-          {result && (
-            <button className="solve-btn" onClick={handleReset} style={{ marginTop: 16 }}>
-              Try another
-            </button>
-          )}
-        </section>
+              {result && (
+                <button className="solve-btn" onClick={handleReset} style={{ marginTop: 16 }}>
+                  Try another
+                </button>
+              )}
+            </section>
 
-        <section className="panel panel-right">
-          <h2>Solver</h2>
-          <SolverGrid guesses={guesses} revealedCount={revealedCount} />
-          <div className={`result-msg ${result?.won ? 'win' : result ? 'lose' : ''}`}>
-            {result?.won && `Solved in ${result.turns} turn${result.turns > 1 ? 's' : ''}!`}
-            {result && !result.won && `Failed after 6 turns`}
-          </div>
-        </section>
+            <section className="panel panel-right">
+              <h2>Solver</h2>
+              <SolverGrid guesses={guesses} revealedCount={revealedCount} />
+              <div className={`result-msg ${result?.won ? 'win' : result ? 'lose' : ''}`}>
+                {result?.won && `Solved in ${result.turns} turn${result.turns > 1 ? 's' : ''}!`}
+                {result && !result.won && `Failed after 6 turns`}
+              </div>
+            </section>
+          </>
+        ) : (
+          <AssistMode
+            hardMode={hardMode}
+            onHardModeChange={setHardMode}
+          />
+        )}
       </main>
 
       <footer className="app-footer">

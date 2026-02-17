@@ -48,6 +48,45 @@
   max-width: 280px;
 }
 
+.mode-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin-top: 12px;
+}
+
+.mode-tab {
+  padding: 8px 24px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: 1px solid #3a3a3c;
+  cursor: pointer;
+  background-color: transparent;
+  color: #818384;
+  transition: all 0.2s;
+}
+
+.mode-tab:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.mode-tab:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.mode-tab.active {
+  background-color: #3a3a3c;
+  color: #ffffff;
+  border-color: #565758;
+}
+
+.mode-tab:not(.active):hover {
+  color: #d7dadc;
+}
+
 .app-footer {
   text-align: center;
   padding: 24px 16px;

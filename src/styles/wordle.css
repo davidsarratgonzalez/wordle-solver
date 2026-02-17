@@ -184,6 +184,47 @@
   max-width: 280px;
 }
 
+/* --- Assistant Mode --- */
+.assist-panel {
+  max-width: 400px;
+}
+
+.tile-inner.clickable {
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.tile-inner.clickable:hover {
+  opacity: 0.8;
+}
+
+.assist-instruction {
+  font-size: 0.95rem;
+  color: #d7dadc;
+  text-align: center;
+}
+
+.assist-instruction strong {
+  letter-spacing: 2px;
+  font-size: 1.05rem;
+}
+
+.assist-remaining {
+  font-size: 0.85rem;
+  color: #818384;
+  text-align: center;
+}
+
+.assist-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.solve-btn.secondary {
+  background-color: #3a3a3c;
+}
+
 /* --- Result message --- */
 .result-msg {
   text-align: center;

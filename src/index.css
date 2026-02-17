@@ -11,6 +11,8 @@ body {
   background-color: #121213;
   color: #ffffff;
   min-height: 100vh;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 #root {
