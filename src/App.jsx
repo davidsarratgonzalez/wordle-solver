@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import WordInput from './components/WordInput.jsx';
-import SolverGrid from './components/SolverGrid.jsx';
+import SolverGrid, { ROW_DURATION } from './components/SolverGrid.jsx';
 import { computePattern, ALL_GREEN } from './solver/feedback.js';
 import { Solver } from './solver/solver.js';
 import { WORDS } from './solver/words.js';
@@ -20,10 +20,8 @@ export default function App() {
   // Full guess pool: solutions + allowed guesses (computed once)
   const fullPool = useMemo(() => [...WORDS, ...ALLOWED], []);
 
-  // Timing: 500ms flip + 4×100ms stagger = 900ms per row, 200ms gap between rows
-  const FLIP_TIME = 900;
   const ROW_GAP = 200;
-  const ROW_CYCLE = FLIP_TIME + ROW_GAP;
+  const ROW_CYCLE = ROW_DURATION + ROW_GAP;
 
   const handleSolve = useCallback((secretWord) => {
     // Clear previous
@@ -60,7 +58,7 @@ export default function App() {
           const won = results[results.length - 1].pattern === ALL_GREEN;
           setResult({ won, turns: results.length });
           setSolving(false);
-        }, revealAt + FLIP_TIME);
+        }, revealAt + ROW_DURATION);
         timersRef.current.push(doneTimer);
       }
     });
@@ -75,6 +73,16 @@ export default function App() {
     setResult(null);
     setResetKey(k => k + 1);
   }, []);
+
+  // Enter = "Try another" when result is showing
+  useEffect(() => {
+    if (!result) return;
+    function onKey(e) {
+      if (e.key === 'Enter') handleReset();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [result, handleReset]);
 
   return (
     <div className="app">
@@ -121,6 +129,13 @@ export default function App() {
           </div>
         </section>
       </main>
+
+      <footer className="app-footer">
+        Made with ❤️ by{' '}
+        <a href="https://davidsarratgonzalez.github.io/" target="_blank" rel="noopener noreferrer">
+          David Sarrat González
+        </a>
+      </footer>
     </div>
   );
 }

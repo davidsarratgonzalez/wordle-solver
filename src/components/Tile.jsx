@@ -1,46 +1,64 @@
 import { useState, useEffect } from 'react';
 
 /**
- * Single Wordle tile with flip animation.
- * Letter is hidden until the flip starts — no pre-reveal.
+ * Single Wordle tile with typing + flip animation.
  *
- * @param {string} letter - The letter to display (or '' for empty)
- * @param {'empty'|'tbd'|'green'|'yellow'|'grey'} state - Tile color state
- * @param {number} delay - Delay in ms before flip animation starts
+ * Phase 1 (typing):  letter appears with a pop at `typeDelay`
+ * Phase 2 (reveal):  tile flips to show color at `flipDelay`
+ *
+ * @param {string}  letter    - The letter to display (or '' for empty)
+ * @param {'empty'|'tbd'|'green'|'yellow'|'grey'} state
+ * @param {number}  typeDelay - ms before letter appears (typing effect)
+ * @param {number}  flipDelay - ms before flip animation starts
  */
-export default function Tile({ letter = '', state = 'empty', delay = 0 }) {
+export default function Tile({ letter = '', state = 'empty', typeDelay = 0, flipDelay = 0 }) {
+  const [showLetter, setShowLetter] = useState(false);
+  const [pop, setPop] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [colorClass, setColorClass] = useState('');
-  const [showLetter, setShowLetter] = useState(false);
 
   useEffect(() => {
-    if (state === 'empty' || state === 'tbd') {
+    if (state === 'empty') {
+      setShowLetter(false);
+      setPop(false);
       setFlipped(false);
-      setColorClass(state === 'tbd' ? 'tbd' : '');
-      setShowLetter(state === 'tbd');
+      setColorClass('');
       return;
     }
 
-    // Show letter + start flip at the same time
-    const flipTimer = setTimeout(() => {
+    if (state === 'tbd') {
       setShowLetter(true);
-      setFlipped(true);
-    }, delay);
+      setColorClass('tbd');
+      return;
+    }
 
-    // Apply color at midpoint of flip (250ms into the 500ms animation)
-    const colorTimer = setTimeout(() => {
-      setColorClass(state);
-    }, delay + 250);
+    const timers = [];
 
-    return () => {
-      clearTimeout(flipTimer);
-      clearTimeout(colorTimer);
-    };
-  }, [state, delay]);
+    // Phase 1: letter appears with pop
+    timers.push(setTimeout(() => {
+      setShowLetter(true);
+      setColorClass('tbd');
+      setPop(true);
+    }, typeDelay));
 
-  const innerClass = ['tile-inner', colorClass, flipped ? 'flip' : '']
-    .filter(Boolean)
-    .join(' ');
+    // Remove pop class after animation
+    timers.push(setTimeout(() => setPop(false), typeDelay + 150));
+
+    // Phase 2: flip
+    timers.push(setTimeout(() => setFlipped(true), flipDelay));
+
+    // Color at flip midpoint
+    timers.push(setTimeout(() => setColorClass(state), flipDelay + 250));
+
+    return () => timers.forEach(clearTimeout);
+  }, [state, typeDelay, flipDelay]);
+
+  const innerClass = [
+    'tile-inner',
+    colorClass,
+    pop ? 'pop' : '',
+    flipped ? 'flip' : '',
+  ].filter(Boolean).join(' ');
 
   return (
     <div className="tile">
