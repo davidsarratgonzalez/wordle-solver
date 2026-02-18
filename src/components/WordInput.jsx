@@ -36,19 +36,18 @@ export default function WordInput({ onSolve, disabled }) {
   }
 
   function handleChange(index, value) {
-    if (index !== activeRef.current || isFull) return;
-
     const ch = value.slice(-1).toLowerCase();
     if (!ch || !/^[a-z]$/.test(ch)) return;
-
-    const next = [...letters];
-    next[index] = ch;
-    setLetters(next);
-
-    // Update ref BEFORE focusing so handleFocus sees the right value
-    if (index < 4) {
-      activeRef.current = index + 1;
-      inputRefs[index + 1].current?.focus();
+    const cur = activeRef.current;
+    setLetters(prev => {
+      if (prev.every(l => l !== '')) return prev;
+      const next = [...prev];
+      next[cur] = ch;
+      return next;
+    });
+    if (cur < 4) {
+      activeRef.current = cur + 1;
+      inputRefs[cur + 1].current?.focus();
     }
   }
 
@@ -57,15 +56,17 @@ export default function WordInput({ onSolve, disabled }) {
       e.preventDefault();
       const cur = activeRef.current;
       if (letters[cur] !== '') {
-        // Active cell has content (word is full) — clear it, stay
-        const next = [...letters];
-        next[cur] = '';
-        setLetters(next);
+        setLetters(prev => {
+          const next = [...prev];
+          next[cur] = '';
+          return next;
+        });
       } else if (cur > 0) {
-        // Active cell is empty — clear previous, move there
-        const next = [...letters];
-        next[cur - 1] = '';
-        setLetters(next);
+        setLetters(prev => {
+          const next = [...prev];
+          next[cur - 1] = '';
+          return next;
+        });
         activeRef.current = cur - 1;
         inputRefs[cur - 1].current?.focus();
       }

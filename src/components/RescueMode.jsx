@@ -50,6 +50,7 @@ export default function RescueMode() {
   const [animateGuess, setAnimateGuess] = useState(true);
 
   const lastEntryIdx = useRef(-1);
+  const [focusCount, setFocusCount] = useState(0);
 
   // --- Letter input ---
   const inputRefs = [useRef(), useRef(), useRef(), useRef(), useRef()];
@@ -65,18 +66,21 @@ export default function RescueMode() {
 
   useEffect(() => {
     if (phase === 'input') inputRefs[activeRef.current].current?.focus();
-  }, [phase, entries]);
+  }, [focusCount]);
 
   function handleChange(index, value) {
-    if (index !== activeRef.current || isFull) return;
     const ch = value.slice(-1).toLowerCase();
     if (!ch || !/^[a-z]$/.test(ch)) return;
-    const next = [...letters];
-    next[index] = ch;
-    setLetters(next);
-    if (index < 4) {
-      activeRef.current = index + 1;
-      inputRefs[index + 1].current?.focus();
+    const cur = activeRef.current;
+    setLetters(prev => {
+      if (prev.every(l => l !== '')) return prev;
+      const next = [...prev];
+      next[cur] = ch;
+      return next;
+    });
+    if (cur < 4) {
+      activeRef.current = cur + 1;
+      inputRefs[cur + 1].current?.focus();
     }
   }
 
@@ -85,13 +89,17 @@ export default function RescueMode() {
       e.preventDefault();
       const cur = activeRef.current;
       if (letters[cur] !== '') {
-        const next = [...letters];
-        next[cur] = '';
-        setLetters(next);
+        setLetters(prev => {
+          const next = [...prev];
+          next[cur] = '';
+          return next;
+        });
       } else if (cur > 0) {
-        const next = [...letters];
-        next[cur - 1] = '';
-        setLetters(next);
+        setLetters(prev => {
+          const next = [...prev];
+          next[cur - 1] = '';
+          return next;
+        });
         activeRef.current = cur - 1;
         inputRefs[cur - 1].current?.focus();
       }
@@ -126,10 +134,12 @@ export default function RescueMode() {
     lastEntryIdx.current = entries.length;
     setEntries(prev => [...prev, { guess: word, feedback: [0, 0, 0, 0, 0] }]);
     setLetters(['', '', '', '', '']);
+    setFocusCount(c => c + 1);
   }
 
   function removeLastWord() {
     setEntries(prev => prev.slice(0, -1));
+    setFocusCount(c => c + 1);
   }
 
   // --- Click grid tile to cycle color ---
