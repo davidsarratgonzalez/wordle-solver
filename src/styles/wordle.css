@@ -101,18 +101,28 @@
   color: #ffffff;
   font-size: 2rem;
   font-weight: 700;
-  text-align: center;
   text-transform: uppercase;
-  caret-color: transparent;
-  outline: none;
   font-family: inherit;
   cursor: text;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
 }
 
-.letter-cell:focus {
+.letter-cell.active {
   border-color: #565758;
-  caret-color: #ffffff;
+}
+
+.hidden-input {
+  position: absolute;
+  opacity: 0;
+  height: 0;
+  width: 0;
+  padding: 0;
+  border: 0;
+  font-size: 16px;
+  pointer-events: none;
 }
 
 .letter-cell.valid {

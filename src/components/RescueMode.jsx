@@ -4,6 +4,7 @@ import { Solver } from '../solver/solver.js';
 import { WORDS } from '../solver/words.js';
 import { ALLOWED } from '../solver/allowed.js';
 import TypingTile from './TypingTile.jsx';
+import HiddenWordInput from './HiddenWordInput.jsx';
 
 const FEEDBACK_CLASSES = ['grey', 'yellow', 'green'];
 const TILE_STATES = ['grey', 'yellow', 'green'];
@@ -51,85 +52,15 @@ export default function RescueMode() {
 
   const lastEntryIdx = useRef(-1);
   const [focusCount, setFocusCount] = useState(0);
-  const mountedRef = useRef(false);
 
-  // --- Letter input ---
-  const inputRefs = [useRef(), useRef(), useRef(), useRef(), useRef()];
+  // activeRef needed by global keyboard handler
   const activeRef = useRef(0);
-
   const word = letters.join('');
   const isFull = letters.every(l => l !== '');
   const isValid = isFull && allValidWords.has(word);
-
   const emptyIdx = letters.indexOf('');
   const active = emptyIdx === -1 ? 4 : emptyIdx;
   activeRef.current = active;
-
-  useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      if ('ontouchstart' in window) return;
-    }
-    if (phase === 'input') inputRefs[activeRef.current].current?.focus();
-  }, [focusCount]);
-
-  function handleChange(index, value) {
-    const ch = value.slice(-1).toLowerCase();
-    if (!ch || !/^[a-z]$/.test(ch)) return;
-    const cur = activeRef.current;
-    setLetters(prev => {
-      if (prev.every(l => l !== '')) return prev;
-      const next = [...prev];
-      next[cur] = ch;
-      return next;
-    });
-    if (cur < 4) {
-      activeRef.current = cur + 1;
-      inputRefs[cur + 1].current?.focus();
-    }
-  }
-
-  function handleInputKeyDown(index, e) {
-    if (e.key === 'Backspace') {
-      e.preventDefault();
-      const cur = activeRef.current;
-      if (letters[cur] !== '') {
-        setLetters(prev => {
-          const next = [...prev];
-          next[cur] = '';
-          return next;
-        });
-      } else if (cur > 0) {
-        setLetters(prev => {
-          const next = [...prev];
-          next[cur - 1] = '';
-          return next;
-        });
-        activeRef.current = cur - 1;
-        inputRefs[cur - 1].current?.focus();
-      }
-    }
-  }
-
-  function handleMouseDown(index, e) {
-    if (index !== activeRef.current) {
-      e.preventDefault();
-      inputRefs[activeRef.current].current?.focus();
-    }
-  }
-
-  function handleFocus(index) {
-    if (index !== activeRef.current) {
-      inputRefs[activeRef.current].current?.focus();
-    }
-  }
-
-  function handleBlur() {
-    if ('ontouchstart' in window) return;
-    if (phase === 'input') {
-      setTimeout(() => inputRefs[activeRef.current].current?.focus(), 0);
-    }
-  }
 
   // --- Add / remove words ---
   function addWord() {
@@ -280,7 +211,7 @@ export default function RescueMode() {
         return;
       }
 
-      // Letters and backspace: desktop only, input phase, when input not focused
+      // Letters and backspace: desktop only, input phase, when hidden input not focused
       if ('ontouchstart' in window) return;
       if (phase !== 'input' || !canAddMore) return;
       if (document.activeElement?.tagName === 'INPUT') return;
@@ -299,16 +230,11 @@ export default function RescueMode() {
       } else if (e.key === 'Backspace') {
         e.preventDefault();
         setLetters(prev => {
-          const cur = activeRef.current;
-          const next = [...prev];
-          if (prev[cur] !== '') {
-            next[cur] = '';
-          } else if (cur > 0) {
-            next[cur - 1] = '';
-            activeRef.current = cur - 1;
-          } else {
-            return prev;
-          }
+          const raw = prev.join('');
+          if (!raw) return prev;
+          const trimmed = raw.slice(0, -1);
+          const next = ['', '', '', '', ''];
+          for (let i = 0; i < trimmed.length; i++) next[i] = trimmed[i];
           return next;
         });
       }
@@ -352,31 +278,19 @@ export default function RescueMode() {
         {phase === 'input' && (
           <>
             {canAddMore && (
-              <div className="word-input-container">
-                <div className="input-row">
-                  {letters.map((letter, i) => (
-                    <input
-                      key={i}
-                      ref={inputRefs[i]}
-                      className={`letter-cell ${isFull ? (isValid ? 'valid' : 'invalid') : ''}`}
-                      type="text"
-
-                      value={letter.toUpperCase()}
-                      onChange={(e) => handleChange(i, e.target.value)}
-                      onKeyDown={(e) => handleInputKeyDown(i, e)}
-                      onMouseDown={(e) => handleMouseDown(i, e)}
-                      onFocus={() => handleFocus(i)}
-                      onBlur={handleBlur}
-                    />
-                  ))}
-                </div>
-                <div className="validation-msg">
-                  {isFull && !isValid && 'Not a valid Wordle word'}
-                </div>
+              <>
+                <HiddenWordInput
+                  letters={letters}
+                  setLetters={setLetters}
+                  isFull={isFull}
+                  isValid={isValid}
+                  onSubmit={addWord}
+                  focusTrigger={focusCount}
+                />
                 <button className="solve-btn" onClick={addWord} disabled={!isValid}>
                   Add
                 </button>
-              </div>
+              </>
             )}
 
             {entries.length > 0 && (
