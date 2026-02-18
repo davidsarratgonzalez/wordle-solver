@@ -60,9 +60,7 @@ export default function RescueMode() {
   activeRef.current = active;
 
   useEffect(() => {
-    if (phase === 'input' && !('ontouchstart' in window)) {
-      inputRefs[activeRef.current].current?.focus();
-    }
+    if (phase === 'input') inputRefs[activeRef.current].current?.focus();
   }, [phase, entries]);
 
   function handleChange(index, value) {

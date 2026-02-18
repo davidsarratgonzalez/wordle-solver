@@ -25,9 +25,7 @@ export default function WordInput({ onSolve, disabled }) {
   activeRef.current = active;
 
   useEffect(() => {
-    if (!disabled && !('ontouchstart' in window)) {
-      inputRefs[activeRef.current].current?.focus();
-    }
+    if (!disabled) inputRefs[activeRef.current].current?.focus();
   }, [disabled]);
 
   function handleBlur() {
