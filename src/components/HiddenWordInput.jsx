@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 
 /**
  * Shared word-input component: hidden <input> + 5 display <div> cells.
@@ -12,11 +12,33 @@ export default function HiddenWordInput({
   isValid,
   onSubmit,
   disabled = false,
+  focusTrigger = 0,
 }) {
   const hiddenRef = useRef(null);
+  const initialRender = useRef(true);
 
   const emptyIdx = letters.indexOf('');
   const active = emptyIdx === -1 ? 4 : emptyIdx;
+
+  // Auto-focus on mount for desktop only
+  useEffect(() => {
+    if ('ontouchstart' in window) return;
+    if (!disabled) hiddenRef.current?.focus();
+  }, []);
+
+  // Focus when focusTrigger changes (skips mount)
+  useEffect(() => {
+    if (initialRender.current) { initialRender.current = false; return; }
+    if (!disabled) hiddenRef.current?.focus();
+  }, [focusTrigger]);
+
+  // Keep cursor at end of input (mobile resets cursor to 0 on controlled value updates)
+  useEffect(() => {
+    const el = hiddenRef.current;
+    if (!el || document.activeElement !== el) return;
+    const len = el.value.length;
+    el.setSelectionRange(len, len);
+  }, [letters]);
 
   function handleRowClick() {
     if (!disabled) hiddenRef.current?.focus();
