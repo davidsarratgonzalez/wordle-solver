@@ -51,6 +51,7 @@ export default function RescueMode() {
 
   const lastEntryIdx = useRef(-1);
   const [focusCount, setFocusCount] = useState(0);
+  const mountedRef = useRef(false);
 
   // --- Letter input ---
   const inputRefs = [useRef(), useRef(), useRef(), useRef(), useRef()];
@@ -65,6 +66,10 @@ export default function RescueMode() {
   activeRef.current = active;
 
   useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      if ('ontouchstart' in window) return;
+    }
     if (phase === 'input') inputRefs[activeRef.current].current?.focus();
   }, [focusCount]);
 
@@ -138,8 +143,8 @@ export default function RescueMode() {
   }
 
   function removeLastWord() {
+    if (entries.length === 1) setFocusCount(c => c + 1);
     setEntries(prev => prev.slice(0, -1));
-    setFocusCount(c => c + 1);
   }
 
   // --- Click grid tile to cycle color ---
