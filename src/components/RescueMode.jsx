@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { ALL_GREEN } from '../solver/feedback.js';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { ALL_GREEN, filterCandidates } from '../solver/feedback.js';
 import { Solver } from '../solver/solver.js';
 import { WORDS } from '../solver/words.js';
 import { ALLOWED } from '../solver/allowed.js';
@@ -265,6 +265,19 @@ export default function RescueMode() {
   const playing = phase === 'playing';
   const done = phase === 'solved' || phase === 'failed' || phase === 'impossible';
   const remaining = solverRef.current?.remaining ?? '?';
+  const inputCandidates = useMemo(() => {
+    if (entries.length === 0) return WORDS.length;
+    const solver = new Solver(WORDS, FULL_POOL);
+    for (const e of entries) {
+      solver.update(e.guess, encodeFeedback(e.feedback));
+    }
+    return solver.remaining;
+  }, [entries]);
+  const solvePreviewRemaining = useMemo(() => {
+    if (!solverRef.current || !currentGuess) return remaining;
+    const pattern = encodeFeedback(solveFeedback);
+    return filterCandidates(solverRef.current.candidates, currentGuess, pattern).length;
+  }, [solveFeedback, currentGuess, remaining]);
   const turnsLeft = 6 - entries.length;
   const totalUsed = entries.length + solverRows.length + (playing ? 1 : 0);
   const emptyRows = Math.max(0, 6 - totalUsed);
@@ -309,6 +322,12 @@ export default function RescueMode() {
               </div>
             )}
 
+            {entries.length > 0 && (
+              <p className="assist-remaining">
+                {inputCandidates} candidate{inputCandidates !== 1 ? 's' : ''} remaining
+              </p>
+            )}
+
             <div className="assist-buttons">
               {entries.length > 0 && (
                 <button className="solve-btn" onClick={handleRescue}>
@@ -330,7 +349,7 @@ export default function RescueMode() {
               Try <strong>{currentGuess.toUpperCase()}</strong>
             </p>
             <p className="assist-remaining">
-              {remaining} candidate{remaining !== 1 ? 's' : ''} remaining
+              {solvePreviewRemaining} candidate{solvePreviewRemaining !== 1 ? 's' : ''} remaining
             </p>
             <div className="assist-buttons">
               <button className="solve-btn" onClick={handleSubmit}>Submit</button>

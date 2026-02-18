@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { ALL_GREEN } from '../solver/feedback.js';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { ALL_GREEN, filterCandidates } from '../solver/feedback.js';
 import { Solver } from '../solver/solver.js';
 import { WORDS } from '../solver/words.js';
 import { ALLOWED } from '../solver/allowed.js';
@@ -136,6 +136,11 @@ export default function AssistMode() {
   });
 
   const remaining = solverRef.current?.remaining ?? WORDS.length;
+  const previewRemaining = useMemo(() => {
+    if (!solverRef.current || !currentGuess) return remaining;
+    const pattern = encodePattern(feedback);
+    return filterCandidates(solverRef.current.candidates, currentGuess, pattern).length;
+  }, [feedback, currentGuess, remaining]);
   const playing = status === 'playing';
   const done = status === 'solved' || status === 'failed' || status === 'impossible';
   const emptyRows = 6 - rows.length - (playing ? 1 : 0);
@@ -161,7 +166,7 @@ export default function AssistMode() {
               Try <strong>{currentGuess.toUpperCase()}</strong>
             </p>
             <p className="assist-remaining">
-              {remaining} candidate{remaining !== 1 ? 's' : ''} remaining
+              {previewRemaining} candidate{previewRemaining !== 1 ? 's' : ''} remaining
             </p>
             <div className="assist-buttons">
               <button className="solve-btn" onClick={handleSubmit}>
