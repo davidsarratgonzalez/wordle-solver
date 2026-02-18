@@ -60,7 +60,9 @@ export default function RescueMode() {
   activeRef.current = active;
 
   useEffect(() => {
-    if (phase === 'input') inputRefs[activeRef.current].current?.focus();
+    if (phase === 'input' && !('ontouchstart' in window)) {
+      inputRefs[activeRef.current].current?.focus();
+    }
   }, [phase, entries]);
 
   function handleChange(index, value) {
@@ -110,6 +112,7 @@ export default function RescueMode() {
   }
 
   function handleBlur() {
+    if ('ontouchstart' in window) return;
     if (phase === 'input') {
       setTimeout(() => inputRefs[activeRef.current].current?.focus(), 0);
     }
