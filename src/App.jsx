@@ -39,18 +39,20 @@ const W = [
   '#ff00ff', '#00ffff', '#39ff14', '#ffe600', '#ff6b00',
   '#bf00ff', '#ff1493', '#00bfff', '#ff3131', '#ff69b4', '#7fff00',
 ];
+// Each cell is either 'color' or [color, glowLevel] where glowLevel > 1 = extra glow
+const P = 2; // glow boost for philosophy & infinity
 const NEON_CELL_COLORS = [
-  [W[0],W[0],W[0],W[0],W[0]],       // heres       → here's
-  [W[1],W[1],W[2],W[2],W[2]],       // mykey       → my + key
-  [W[3],W[3],W[3],W[3],W[3]],       // philo       → philosophy
-  [W[3],W[3],W[3],W[3],W[3]],       // sophy       → philosophy
-  [W[4],W[5],W[5],W[5],W[5]],       // afrea       → a + freak
-  [W[5],W[6],W[6],W[6],W[6]],       // klike       → freak + like
-  [W[7],W[7],W[7],W[7],W[7]],       // me___       → me
-  [W[8],W[8],W[8],W[8],W[8]],       // _just       → just
-  [W[9],W[9],W[9],W[9],W[9]],       // needs       → needs
-  [W[10],W[10],W[10],W[10],W[10]],  // infi_       → infinity
-  [W[10],W[10],W[10],W[10],W[10]],  // _nity       → infinity
+  [W[0],W[0],W[0],W[0],W[0]],                         // heres       → here's
+  [W[1],W[1],W[2],W[2],W[2]],                         // mykey       → my + key
+  [W[3],W[3],W[3],W[3],W[3]],                         // philo       → philosophy
+  [W[3],W[3],W[3],W[3],W[3]],                         // sophy       → philosophy
+  [W[4],W[5],W[5],W[5],W[5]],                         // afrea       → a + freak
+  [W[5],W[6],W[6],W[6],W[6]],                         // klike       → freak + like
+  [W[7],W[7],W[7],W[7],W[7]],                         // me___       → me
+  [W[8],W[8],W[8],W[8],W[8]],                         // _just       → just
+  [W[9],W[9],W[9],W[9],W[9]],                         // needs       → needs
+  [[W[10],P],[W[10],P],[W[10],P],[W[10],P],[W[10],P]],// infi_       → infinity
+  [[W[10],P],[W[10],P],[W[10],P],[W[10],P],[W[10],P]],// _nity       → infinity
 ];
 
 export default function App() {

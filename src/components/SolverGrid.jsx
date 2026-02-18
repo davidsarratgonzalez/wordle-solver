@@ -48,12 +48,16 @@ export default function SolverGrid({ guesses, revealedCount, neonColors, trumpet
       let letterIdx = 0;
       for (let c = 0; c < 5; c++) {
         const isSpace = rowColors && entry.guess[c] === ' ';
+        const raw = rowColors?.[c];
+        const cellColor = isSpace ? null : (Array.isArray(raw) ? raw[0] : raw) || null;
+        const glowLevel = Array.isArray(raw) ? raw[1] : 1;
         tiles.push(
           <Tile
             key={c}
             letter={isSpace ? '' : entry.guess[c]}
             state={isSpace ? 'empty' : states[c]}
-            neonColor={isSpace ? null : (rowColors?.[c] || null)}
+            neonColor={cellColor}
+            neonGlow={glowLevel}
             typeDelay={rowColors ? (isSpace ? 0 : letterIdx * TYPE_SPEED) : c * TYPE_SPEED}
             flipDelay={rowColors ? 0 : FLIP_OFFSET + c * FLIP_STAGGER}
           />

@@ -52,6 +52,19 @@
   transition: none;
 }
 
+.tile-inner.neon.glow-pulse {
+  animation: glow-pulse 2s ease-in-out 1 forwards;
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    text-shadow: 0 0 6px var(--neon-color);
+  }
+  50% {
+    text-shadow: 0 0 8px var(--neon-color), 0 0 18px var(--neon-color), 0 0 32px var(--neon-color);
+  }
+}
+
 .trumpet-cell {
   background: transparent;
 }

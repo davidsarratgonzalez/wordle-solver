@@ -11,11 +11,12 @@ import { useState, useEffect } from 'react';
  * @param {number}  typeDelay - ms before letter appears (typing effect)
  * @param {number}  flipDelay - ms before flip animation starts
  */
-export default function Tile({ letter = '', state = 'empty', typeDelay = 0, flipDelay = 0, neonColor = null }) {
+export default function Tile({ letter = '', state = 'empty', typeDelay = 0, flipDelay = 0, neonColor = null, neonGlow = 1 }) {
   const [showLetter, setShowLetter] = useState(false);
   const [pop, setPop] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [colorClass, setColorClass] = useState('');
+  const [glowing, setGlowing] = useState(false);
 
   useEffect(() => {
     if (!neonColor && state === 'empty') {
@@ -23,6 +24,7 @@ export default function Tile({ letter = '', state = 'empty', typeDelay = 0, flip
       setPop(false);
       setFlipped(false);
       setColorClass('');
+      setGlowing(false);
       return;
     }
 
@@ -36,12 +38,16 @@ export default function Tile({ letter = '', state = 'empty', typeDelay = 0, flip
 
     if (neonColor) {
       // Neon mode: typing animation only, no flip
+      setGlowing(false);
       timers.push(setTimeout(() => {
         setShowLetter(true);
         setColorClass('neon');
         setPop(true);
       }, typeDelay));
       timers.push(setTimeout(() => setPop(false), typeDelay + 150));
+      if (neonGlow > 1) {
+        timers.push(setTimeout(() => setGlowing(true), typeDelay + 150));
+      }
       return () => timers.forEach(clearTimeout);
     }
 
@@ -69,10 +75,12 @@ export default function Tile({ letter = '', state = 'empty', typeDelay = 0, flip
     colorClass,
     pop ? 'pop' : '',
     flipped ? 'flip' : '',
+    glowing ? 'glow-pulse' : '',
   ].filter(Boolean).join(' ');
 
   const neonStyle = (colorClass === 'neon' && neonColor) ? {
     color: neonColor,
+    '--neon-color': neonColor,
     textShadow: `0 0 6px ${neonColor}`,
     borderColor: '#3a3a3c',
   } : undefined;
