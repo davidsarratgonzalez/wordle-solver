@@ -188,6 +188,7 @@
 .validation-msg {
   font-size: 0.85rem;
   height: 1.2em;
+  margin-top: 8px;
   color: #b5403a;
 }
 
