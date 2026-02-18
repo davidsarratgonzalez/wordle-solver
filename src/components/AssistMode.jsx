@@ -194,7 +194,7 @@ export default function AssistMode() {
               {status === 'impossible' && 'No words match, check your colors'}
             </div>
             <div className="assist-buttons">
-              {status === 'impossible' && (
+              {(status === 'impossible' || status === 'solved') && (
                 <button className="solve-btn secondary" onClick={handleBack}>
                   Back
                 </button>

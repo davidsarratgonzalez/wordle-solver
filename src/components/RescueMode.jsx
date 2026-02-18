@@ -152,6 +152,12 @@ export default function RescueMode() {
       pattern: encodeFeedback(e.feedback),
     }));
 
+    // Already solved if last entry is all green
+    if (history.length > 0 && history[history.length - 1].pattern === ALL_GREEN) {
+      setPhase('solved');
+      return;
+    }
+
     const solver = replaySolver(history);
     solverRef.current = solver;
 
@@ -367,7 +373,7 @@ export default function RescueMode() {
               {phase === 'impossible' && 'No words match, check your colors'}
             </div>
             <div className="assist-buttons">
-              {phase === 'impossible' && (
+              {(phase === 'impossible' || phase === 'solved') && (
                 <button className="solve-btn secondary" onClick={handleSolverBack}>
                   Back
                 </button>
