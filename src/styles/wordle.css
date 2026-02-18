@@ -47,6 +47,10 @@
   border-color: #3a3a3c;
 }
 
+.tile-inner.neon {
+  background: transparent;
+}
+
 .tile-inner.pop {
   animation: pop 0.1s ease;
 }

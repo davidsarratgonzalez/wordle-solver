@@ -10,6 +10,42 @@ import { ALLOWED } from './solver/allowed.js';
 import './styles/wordle.css';
 import './App.css';
 
+// Easter egg: "david" → Infinity 2008 lyrics synced to music
+const INFINITY_ROWS = [
+  'heres', 'mykey', 'philo', 'sophy', 'afrea',
+  'klike', 'mejus', 'tneed', 'sinfi', 'nity ',
+].map(guess => ({ guess, pattern: ALL_GREEN }));
+
+// Delay (ms) before the first letter starts typing — adjust to sync with audio start
+const EASTER_EGG_DELAY = 0;
+
+// Delay (ms) for each row reveal relative to EASTER_EGG_DELAY, timed to the lyrics:
+//   "here's | my key | philo | sophy | a frea | k like | me jus | t need | s infi | nity"
+// Karaoke refs: "Here's my key" @11.12s, "Philosophy" @12.76s,
+//               "A freak like me" @14.52s, "Just needs infinity" @15.91s
+const INFINITY_DELAYS = [
+  0, 400, 1640, 2200, 3400, 3900, 4500, 5000, 5400, 5800,
+];
+
+// Per-letter neon color, painted by word not by row
+// Words: here's | my | key | philosophy | a | freak | like | me | just | needs | infinity
+const W = [
+  '#ff00ff', '#00ffff', '#39ff14', '#ffe600', '#ff6b00',
+  '#bf00ff', '#ff1493', '#00bfff', '#ff3131', '#ff69b4', '#7fff00',
+];
+const NEON_CELL_COLORS = [
+  [W[0],W[0],W[0],W[0],W[0]],   // heres        → here's
+  [W[1],W[1],W[2],W[2],W[2]],   // mykey        → my + key
+  [W[3],W[3],W[3],W[3],W[3]],   // philo        → philosophy
+  [W[3],W[3],W[3],W[3],W[3]],   // sophy        → philosophy
+  [W[4],W[5],W[5],W[5],W[5]],   // afrea        → a + freak
+  [W[5],W[6],W[6],W[6],W[6]],   // klike        → freak + like
+  [W[7],W[7],W[8],W[8],W[8]],   // mejus        → me + just
+  [W[8],W[9],W[9],W[9],W[9]],   // tneed        → just + needs
+  [W[9],W[10],W[10],W[10],W[10]], // sinfi       → needs + infinity
+  [W[10],W[10],W[10],W[10],W[10]], // nity_      → infinity
+];
+
 export default function App() {
   const [mode, setMode] = useState('demo'); // 'demo' | 'assist' | 'rescue'
   const [guesses, setGuesses] = useState([]);
@@ -17,7 +53,17 @@ export default function App() {
   const [solving, setSolving] = useState(false);
   const [result, setResult] = useState(null); // { won, turns }
   const [resetKey, setResetKey] = useState(0);
+  const [easterColors, setEasterColors] = useState([]);
   const timersRef = useRef([]);
+  const audioRef = useRef(null);
+
+  // Preload easter egg audio in background
+  useEffect(() => {
+    const audio = new Audio(`${import.meta.env.BASE_URL}infinity.mp3`);
+    audio.preload = 'auto';
+    audioRef.current = audio;
+    return () => { audio.pause(); audio.src = ''; };
+  }, []);
 
   const fullPool = useMemo(() => [...WORDS, ...ALLOWED], []);
 
@@ -29,6 +75,43 @@ export default function App() {
     timersRef.current = [];
     setResult(null);
     setSolving(true);
+
+    // Easter egg
+    if (secretWord === 'david') {
+      const audio = audioRef.current;
+      if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
+
+      setGuesses([]);
+      setRevealedCount(0);
+      setEasterColors([]);
+
+      INFINITY_ROWS.forEach((row, i) => {
+        const posInPage = i % 6;
+        const isNewPage = posInPage === 0 && i > 0;
+
+        const timer = setTimeout(() => {
+          if (isNewPage) {
+            // Wipe grid and start new page
+            setGuesses([row]);
+            setRevealedCount(1);
+            setEasterColors([NEON_CELL_COLORS[i]]);
+          } else {
+            setGuesses(prev => [...prev, row]);
+            setRevealedCount(posInPage + 1);
+            setEasterColors(prev => [...prev, NEON_CELL_COLORS[i]]);
+          }
+        }, INFINITY_DELAYS[i] + EASTER_EGG_DELAY);
+        timersRef.current.push(timer);
+      });
+
+      const lastDelay = INFINITY_DELAYS[INFINITY_DELAYS.length - 1];
+      const doneTimer = setTimeout(() => {
+        setResult({ won: true, turns: INFINITY_ROWS.length, easter: true });
+        setSolving(false);
+      }, lastDelay + EASTER_EGG_DELAY + 500);
+      timersRef.current.push(doneTimer);
+      return;
+    }
 
     const solver = new Solver(WORDS, fullPool);
     const results = [];
@@ -64,10 +147,13 @@ export default function App() {
   const handleReset = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
+    const audio = audioRef.current;
+    if (audio) { audio.pause(); audio.currentTime = 0; }
     setGuesses([]);
     setRevealedCount(0);
     setSolving(false);
     setResult(null);
+    setEasterColors([]);
     setResetKey(k => k + 1);
   }, []);
 
@@ -131,10 +217,14 @@ export default function App() {
 
             <section className="panel panel-right">
               <h2>Solver</h2>
-              <SolverGrid guesses={guesses} revealedCount={revealedCount} />
-              <div className={`result-msg ${result?.won ? 'win' : result ? 'lose' : ''}`}>
-                {result?.won && `Solved in ${result.turns} turn${result.turns > 1 ? 's' : ''}!`}
-                {result && !result.won && `Failed after 6 turns`}
+              <SolverGrid
+                guesses={guesses}
+                revealedCount={revealedCount}
+                neonColors={easterColors.length ? easterColors : null}
+              />
+              <div className={`result-msg ${result?.easter ? '' : result?.won ? 'win' : result ? 'lose' : ''}`}>
+                {!result?.easter && result?.won && `Solved in ${result.turns} turn${result.turns > 1 ? 's' : ''}!`}
+                {!result?.easter && result && !result.won && `Failed after 6 turns`}
               </div>
             </section>
           </>

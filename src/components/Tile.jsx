@@ -11,14 +11,14 @@ import { useState, useEffect } from 'react';
  * @param {number}  typeDelay - ms before letter appears (typing effect)
  * @param {number}  flipDelay - ms before flip animation starts
  */
-export default function Tile({ letter = '', state = 'empty', typeDelay = 0, flipDelay = 0 }) {
+export default function Tile({ letter = '', state = 'empty', typeDelay = 0, flipDelay = 0, neonColor = null }) {
   const [showLetter, setShowLetter] = useState(false);
   const [pop, setPop] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [colorClass, setColorClass] = useState('');
 
   useEffect(() => {
-    if (state === 'empty') {
+    if (!neonColor && state === 'empty') {
       setShowLetter(false);
       setPop(false);
       setFlipped(false);
@@ -26,13 +26,24 @@ export default function Tile({ letter = '', state = 'empty', typeDelay = 0, flip
       return;
     }
 
-    if (state === 'tbd') {
+    if (!neonColor && state === 'tbd') {
       setShowLetter(true);
       setColorClass('tbd');
       return;
     }
 
     const timers = [];
+
+    if (neonColor) {
+      // Neon mode: typing animation only, no flip
+      timers.push(setTimeout(() => {
+        setShowLetter(true);
+        setColorClass('neon');
+        setPop(true);
+      }, typeDelay));
+      timers.push(setTimeout(() => setPop(false), typeDelay + 150));
+      return () => timers.forEach(clearTimeout);
+    }
 
     // Phase 1: letter appears with pop
     timers.push(setTimeout(() => {
@@ -51,7 +62,7 @@ export default function Tile({ letter = '', state = 'empty', typeDelay = 0, flip
     timers.push(setTimeout(() => setColorClass(state), flipDelay + 250));
 
     return () => timers.forEach(clearTimeout);
-  }, [state, typeDelay, flipDelay]);
+  }, [state, typeDelay, flipDelay, neonColor]);
 
   const innerClass = [
     'tile-inner',
@@ -60,9 +71,15 @@ export default function Tile({ letter = '', state = 'empty', typeDelay = 0, flip
     flipped ? 'flip' : '',
   ].filter(Boolean).join(' ');
 
+  const neonStyle = (colorClass === 'neon' && neonColor) ? {
+    color: neonColor,
+    textShadow: `0 0 6px ${neonColor}`,
+    borderColor: '#3a3a3c',
+  } : undefined;
+
   return (
     <div className="tile">
-      <div className={innerClass}>
+      <div className={innerClass} style={neonStyle}>
         {showLetter ? letter.toUpperCase() : ''}
       </div>
     </div>

@@ -30,8 +30,9 @@ function patternToStates(pattern) {
  *
  * @param {Array<{guess: string, pattern: number}>} guesses
  * @param {number} revealedCount - How many rows are currently revealed
+ * @param {string[][]|null} neonColors - Per-cell neon color hex strings [row][col] (easter egg)
  */
-export default function SolverGrid({ guesses, revealedCount }) {
+export default function SolverGrid({ guesses, revealedCount, neonColors }) {
   const rows = [];
 
   for (let r = 0; r < 6; r++) {
@@ -39,15 +40,18 @@ export default function SolverGrid({ guesses, revealedCount }) {
     const tiles = [];
 
     if (entry && r < revealedCount) {
+      const rowColors = neonColors?.[r] || null;
       const states = patternToStates(entry.pattern);
       for (let c = 0; c < 5; c++) {
+        const cellColor = rowColors?.[c] || null;
         tiles.push(
           <Tile
             key={c}
             letter={entry.guess[c]}
             state={states[c]}
+            neonColor={cellColor}
             typeDelay={c * TYPE_SPEED}
-            flipDelay={FLIP_OFFSET + c * FLIP_STAGGER}
+            flipDelay={rowColors ? 0 : FLIP_OFFSET + c * FLIP_STAGGER}
           />
         );
       }
@@ -57,8 +61,10 @@ export default function SolverGrid({ guesses, revealedCount }) {
       }
     }
 
+    // Use word-based key when neon is active so wipe forces remount
+    const rowKey = (neonColors && entry) ? `n-${entry.guess}` : r;
     rows.push(
-      <div className="grid-row" key={r}>
+      <div className="grid-row" key={rowKey}>
         {tiles}
       </div>
     );
