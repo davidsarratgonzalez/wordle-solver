@@ -3,6 +3,7 @@ import { ALL_GREEN } from '../solver/feedback.js';
 import { Solver } from '../solver/solver.js';
 import { WORDS } from '../solver/words.js';
 import { ALLOWED } from '../solver/allowed.js';
+import TypingTile from './TypingTile.jsx';
 
 const FEEDBACK_CLASSES = ['grey', 'yellow', 'green'];
 const TILE_STATES = ['grey', 'yellow', 'green'];
@@ -46,6 +47,9 @@ export default function RescueMode() {
   const [solverRows, setSolverRows] = useState([]);
   const [currentGuess, setCurrentGuess] = useState('');
   const [solveFeedback, setSolveFeedback] = useState([0, 0, 0, 0, 0]);
+  const [animateGuess, setAnimateGuess] = useState(true);
+
+  const lastEntryIdx = useRef(-1);
 
   // --- Letter input ---
   const inputRefs = [useRef(), useRef(), useRef(), useRef(), useRef()];
@@ -119,6 +123,7 @@ export default function RescueMode() {
   // --- Add / remove words ---
   function addWord() {
     if (!isValid || entries.length >= 6) return;
+    lastEntryIdx.current = entries.length;
     setEntries(prev => [...prev, { guess: word, feedback: [0, 0, 0, 0, 0] }]);
     setLetters(['', '', '', '', '']);
   }
@@ -162,6 +167,7 @@ export default function RescueMode() {
     }
 
     setSolverRows([]);
+    setAnimateGuess(true);
     setCurrentGuess(solver.bestGuess(turn));
     setSolveFeedback([0, 0, 0, 0, 0]);
     setPhase('playing');
@@ -204,6 +210,7 @@ export default function RescueMode() {
       return;
     }
 
+    setAnimateGuess(true);
     setCurrentGuess(solverRef.current.bestGuess(totalTurns + 1));
     setSolveFeedback([0, 0, 0, 0, 0]);
   }
@@ -226,12 +233,14 @@ export default function RescueMode() {
     ];
     const solver = replaySolver(allHistory);
     solverRef.current = solver;
+    setAnimateGuess(false);
     setCurrentGuess(solver.bestGuess(allHistory.length + 1));
     setSolveFeedback([0, 0, 0, 0, 0]);
     setPhase('playing');
   }
 
   function handleFullReset() {
+    lastEntryIdx.current = -1;
     setEntries([]);
     setLetters(['', '', '', '', '']);
     setSolverRows([]);
@@ -358,15 +367,15 @@ export default function RescueMode() {
           {entries.map((entry, r) => (
             <div className="grid-row" key={`h${r}`}>
               {entry.guess.split('').map((letter, c) => (
-                <div
-                  className="tile"
+                <TypingTile
                   key={c}
+                  letter={letter}
+                  col={c}
+                  colorClass={FEEDBACK_CLASSES[entry.feedback[c]]}
+                  clickable={phase === 'input'}
+                  animate={r === lastEntryIdx.current}
                   onClick={phase === 'input' ? () => handleGridTileClick(r, c) : undefined}
-                >
-                  <div className={`tile-inner ${FEEDBACK_CLASSES[entry.feedback[c]]}${phase === 'input' ? ' clickable' : ''}`}>
-                    {letter.toUpperCase()}
-                  </div>
-                </div>
+                />
               ))}
             </div>
           ))}
@@ -389,13 +398,17 @@ export default function RescueMode() {
 
           {/* Solver current row */}
           {playing && (
-            <div className="grid-row">
+            <div className="grid-row" key={currentGuess}>
               {currentGuess.split('').map((letter, c) => (
-                <div className="tile" key={c} onClick={() => handleSolveTileClick(c)}>
-                  <div className={`tile-inner ${FEEDBACK_CLASSES[solveFeedback[c]]} clickable`}>
-                    {letter.toUpperCase()}
-                  </div>
-                </div>
+                <TypingTile
+                  key={c}
+                  letter={letter}
+                  col={c}
+                  colorClass={FEEDBACK_CLASSES[solveFeedback[c]]}
+                  clickable
+                  animate={animateGuess}
+                  onClick={() => handleSolveTileClick(c)}
+                />
               ))}
             </div>
           )}

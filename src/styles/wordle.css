@@ -68,7 +68,6 @@
     transform: rotateX(0deg);
   }
 }
-
 /* --- Grid --- */
 .solver-grid {
   display: flex;

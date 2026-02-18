@@ -3,6 +3,7 @@ import { ALL_GREEN } from '../solver/feedback.js';
 import { Solver } from '../solver/solver.js';
 import { WORDS } from '../solver/words.js';
 import { ALLOWED } from '../solver/allowed.js';
+import TypingTile from './TypingTile.jsx';
 
 const FEEDBACK_CLASSES = ['grey', 'yellow', 'green'];
 const TILE_STATES = ['grey', 'yellow', 'green'];
@@ -44,11 +45,13 @@ export default function AssistMode() {
   const [currentGuess, setCurrentGuess] = useState('');
   const [feedback, setFeedback] = useState([0, 0, 0, 0, 0]);
   const [status, setStatus] = useState('idle');    // idle | playing | solved | failed | impossible
+  const [animateGuess, setAnimateGuess] = useState(true);
 
   function handleStart() {
     const solver = new Solver(WORDS, FULL_POOL);
     solverRef.current = solver;
     setRows([]);
+    setAnimateGuess(true);
     setCurrentGuess(solver.bestGuess(1));
     setFeedback([0, 0, 0, 0, 0]);
     setStatus('playing');
@@ -91,6 +94,7 @@ export default function AssistMode() {
       return;
     }
 
+    setAnimateGuess(true);
     setCurrentGuess(solver.bestGuess(newRows.length + 1));
     setFeedback([0, 0, 0, 0, 0]);
   }
@@ -105,6 +109,7 @@ export default function AssistMode() {
     solverRef.current = solver;
 
     const turn = prev.length + 1;
+    setAnimateGuess(false);
     setCurrentGuess(solver.bestGuess(turn));
     setFeedback([0, 0, 0, 0, 0]);
     setStatus('playing');
@@ -219,13 +224,17 @@ export default function AssistMode() {
 
           {/* Current row */}
           {playing && (
-            <div className="grid-row">
+            <div className="grid-row" key={currentGuess}>
               {currentGuess.split('').map((letter, c) => (
-                <div className="tile" key={c} onClick={() => handleTileClick(c)}>
-                  <div className={`tile-inner ${FEEDBACK_CLASSES[feedback[c]]} clickable`}>
-                    {letter.toUpperCase()}
-                  </div>
-                </div>
+                <TypingTile
+                  key={c}
+                  letter={letter}
+                  col={c}
+                  colorClass={FEEDBACK_CLASSES[feedback[c]]}
+                  clickable
+                  animate={animateGuess}
+                  onClick={() => handleTileClick(c)}
+                />
               ))}
             </div>
           )}
