@@ -139,6 +139,7 @@ export default function AssistMode() {
   const previewRemaining = useMemo(() => {
     if (!solverRef.current || !currentGuess) return remaining;
     const pattern = encodePattern(feedback);
+    if (pattern === ALL_GREEN) return WORDS.includes(currentGuess) ? 1 : 0;
     return filterCandidates(solverRef.current.candidates, currentGuess, pattern).length;
   }, [feedback, currentGuess, remaining]);
   const playing = status === 'playing';

@@ -282,6 +282,7 @@ export default function RescueMode() {
   const solvePreviewRemaining = useMemo(() => {
     if (!solverRef.current || !currentGuess) return remaining;
     const pattern = encodeFeedback(solveFeedback);
+    if (pattern === ALL_GREEN) return WORDS.includes(currentGuess) ? 1 : 0;
     return filterCandidates(solverRef.current.candidates, currentGuess, pattern).length;
   }, [solveFeedback, currentGuess, remaining]);
   const turnsLeft = 6 - entries.length;
