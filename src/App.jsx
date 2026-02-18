@@ -13,19 +13,25 @@ import './App.css';
 // Easter egg: "david" → Infinity 2008 lyrics synced to music
 const INFINITY_ROWS = [
   'heres', 'mykey', 'philo', 'sophy', 'afrea',
-  'klike', 'mejus', 'tneed', 'sinfi', 'nity ',
+  'klike', 'me   ', ' just', 'needs', 'infi ', ' nity',
 ].map(guess => ({ guess, pattern: ALL_GREEN }));
 
 // Delay (ms) before the first letter starts typing — adjust to sync with audio start
-const EASTER_EGG_DELAY = 0;
+const EASTER_EGG_DELAY = 750;
 
 // Delay (ms) for each row reveal relative to EASTER_EGG_DELAY, timed to the lyrics:
-//   "here's | my key | philo | sophy | a frea | k like | me jus | t need | s infi | nity"
+// Page 1: "here's | my key | philo | sophy | a frea | k like"
+// Page 2: "me | just | needs | infi | nity"
 // Karaoke refs: "Here's my key" @11.12s, "Philosophy" @12.76s,
 //               "A freak like me" @14.52s, "Just needs infinity" @15.91s
 const INFINITY_DELAYS = [
-  0, 400, 1640, 2200, 3400, 3900, 4500, 5000, 5400, 5800,
+  0, 400, 1640, 2200, 3400, 3900, 4300, 4700, 5100, 5500, 5850,
 ];
+
+// Delay (ms) before each trumpet appears, relative to when the trumpet row shows
+const TRUMPET_DELAYS = [1000, 1500, 2000];
+// Delay (ms) before each trumpet stops animating (relative to same base)
+const TRUMPET_STOP_DELAYS = [1500, 2000, 3500];
 
 // Per-letter neon color, painted by word not by row
 // Words: here's | my | key | philosophy | a | freak | like | me | just | needs | infinity
@@ -34,16 +40,17 @@ const W = [
   '#bf00ff', '#ff1493', '#00bfff', '#ff3131', '#ff69b4', '#7fff00',
 ];
 const NEON_CELL_COLORS = [
-  [W[0],W[0],W[0],W[0],W[0]],   // heres        → here's
-  [W[1],W[1],W[2],W[2],W[2]],   // mykey        → my + key
-  [W[3],W[3],W[3],W[3],W[3]],   // philo        → philosophy
-  [W[3],W[3],W[3],W[3],W[3]],   // sophy        → philosophy
-  [W[4],W[5],W[5],W[5],W[5]],   // afrea        → a + freak
-  [W[5],W[6],W[6],W[6],W[6]],   // klike        → freak + like
-  [W[7],W[7],W[8],W[8],W[8]],   // mejus        → me + just
-  [W[8],W[9],W[9],W[9],W[9]],   // tneed        → just + needs
-  [W[9],W[10],W[10],W[10],W[10]], // sinfi       → needs + infinity
-  [W[10],W[10],W[10],W[10],W[10]], // nity_      → infinity
+  [W[0],W[0],W[0],W[0],W[0]],       // heres       → here's
+  [W[1],W[1],W[2],W[2],W[2]],       // mykey       → my + key
+  [W[3],W[3],W[3],W[3],W[3]],       // philo       → philosophy
+  [W[3],W[3],W[3],W[3],W[3]],       // sophy       → philosophy
+  [W[4],W[5],W[5],W[5],W[5]],       // afrea       → a + freak
+  [W[5],W[6],W[6],W[6],W[6]],       // klike       → freak + like
+  [W[7],W[7],W[7],W[7],W[7]],       // me___       → me
+  [W[8],W[8],W[8],W[8],W[8]],       // _just       → just
+  [W[9],W[9],W[9],W[9],W[9]],       // needs       → needs
+  [W[10],W[10],W[10],W[10],W[10]],  // infi_       → infinity
+  [W[10],W[10],W[10],W[10],W[10]],  // _nity       → infinity
 ];
 
 export default function App() {
@@ -54,6 +61,7 @@ export default function App() {
   const [result, setResult] = useState(null); // { won, turns }
   const [resetKey, setResetKey] = useState(0);
   const [easterColors, setEasterColors] = useState([]);
+  const [showTrumpets, setShowTrumpets] = useState(['hidden', 'hidden', 'hidden']);
   const timersRef = useRef([]);
   const audioRef = useRef(null);
 
@@ -105,10 +113,24 @@ export default function App() {
       });
 
       const lastDelay = INFINITY_DELAYS[INFINITY_DELAYS.length - 1];
+      const trumpetBase = lastDelay + EASTER_EGG_DELAY + 500;
+      TRUMPET_DELAYS.forEach((d, ti) => {
+        const t = setTimeout(() => {
+          setShowTrumpets(prev => { const n = [...prev]; n[ti] = 'playing'; return n; });
+        }, trumpetBase + d);
+        timersRef.current.push(t);
+      });
+      TRUMPET_STOP_DELAYS.forEach((d, ti) => {
+        const t = setTimeout(() => {
+          setShowTrumpets(prev => { const n = [...prev]; n[ti] = 'still'; return n; });
+        }, trumpetBase + d);
+        timersRef.current.push(t);
+      });
+
       const doneTimer = setTimeout(() => {
         setResult({ won: true, turns: INFINITY_ROWS.length, easter: true });
         setSolving(false);
-      }, lastDelay + EASTER_EGG_DELAY + 500);
+      }, trumpetBase + TRUMPET_STOP_DELAYS[TRUMPET_STOP_DELAYS.length - 1]);
       timersRef.current.push(doneTimer);
       return;
     }
@@ -154,6 +176,7 @@ export default function App() {
     setSolving(false);
     setResult(null);
     setEasterColors([]);
+    setShowTrumpets(['hidden', 'hidden', 'hidden']);
     setResetKey(k => k + 1);
   }, []);
 
@@ -221,6 +244,7 @@ export default function App() {
                 guesses={guesses}
                 revealedCount={revealedCount}
                 neonColors={easterColors.length ? easterColors : null}
+                trumpets={showTrumpets.some(s => s !== 'hidden') ? showTrumpets : null}
               />
               <div className={`result-msg ${result?.easter ? '' : result?.won ? 'win' : result ? 'lose' : ''}`}>
                 {!result?.easter && result?.won && `Solved in ${result.turns} turn${result.turns > 1 ? 's' : ''}!`}
