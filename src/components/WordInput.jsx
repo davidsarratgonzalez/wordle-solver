@@ -24,7 +24,12 @@ export default function WordInput({ onSolve, disabled }) {
   const active = emptyIdx === -1 ? 4 : emptyIdx;
   activeRef.current = active;
 
+  const mountedRef = useRef(false);
   useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      if ('ontouchstart' in window) return;
+    }
     if (!disabled) inputRefs[activeRef.current].current?.focus();
   }, [disabled]);
 

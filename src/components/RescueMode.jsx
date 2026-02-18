@@ -108,8 +108,6 @@ export default function RescueMode() {
         activeRef.current = cur - 1;
         inputRefs[cur - 1].current?.focus();
       }
-    } else if (e.key === 'Enter' && isValid) {
-      addWord();
     }
   }
 
@@ -269,14 +267,51 @@ export default function RescueMode() {
     setSolveFeedback([0, 0, 0, 0, 0]);
     setPhase('input');
     solverRef.current = null;
+    setFocusCount(c => c + 1);
   }
 
-  // --- Enter key ---
+  // --- Global keyboard ---
   useEffect(() => {
     function onKey(e) {
-      if (e.key !== 'Enter') return;
-      if (phase === 'playing') handleSubmit();
-      else if (phase !== 'input') handleFullReset();
+      if (e.key === 'Enter') {
+        if (phase === 'input' && isValid && canAddMore) addWord();
+        else if (phase === 'playing') handleSubmit();
+        else if (phase !== 'input') handleFullReset();
+        return;
+      }
+
+      // Letters and backspace: desktop only, input phase, when input not focused
+      if ('ontouchstart' in window) return;
+      if (phase !== 'input' || !canAddMore) return;
+      if (document.activeElement?.tagName === 'INPUT') return;
+
+      if (/^[a-zA-Z]$/.test(e.key)) {
+        e.preventDefault();
+        const ch = e.key.toLowerCase();
+        const cur = activeRef.current;
+        setLetters(prev => {
+          if (prev.every(l => l !== '')) return prev;
+          const next = [...prev];
+          next[cur] = ch;
+          return next;
+        });
+        if (cur < 4) activeRef.current = cur + 1;
+      } else if (e.key === 'Backspace') {
+        e.preventDefault();
+        setLetters(prev => {
+          const cur = activeRef.current;
+          const next = [...prev];
+          if (prev[cur] !== '') {
+            next[cur] = '';
+          } else if (cur > 0) {
+            next[cur - 1] = '';
+            activeRef.current = cur - 1;
+          } else {
+            return prev;
+          }
+          return next;
+        });
+      }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
