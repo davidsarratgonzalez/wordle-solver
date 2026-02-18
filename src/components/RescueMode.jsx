@@ -51,7 +51,6 @@ export default function RescueMode() {
   const [animateGuess, setAnimateGuess] = useState(true);
 
   const lastEntryIdx = useRef(-1);
-  const [focusCount, setFocusCount] = useState(0);
 
   // activeRef needed by global keyboard handler
   const activeRef = useRef(0);
@@ -68,11 +67,9 @@ export default function RescueMode() {
     lastEntryIdx.current = entries.length;
     setEntries(prev => [...prev, { guess: word, feedback: [0, 0, 0, 0, 0] }]);
     setLetters(['', '', '', '', '']);
-    setFocusCount(c => c + 1);
   }
 
   function removeLastWord() {
-    if (entries.length === 1) setFocusCount(c => c + 1);
     setEntries(prev => prev.slice(0, -1));
   }
 
@@ -198,7 +195,6 @@ export default function RescueMode() {
     setSolveFeedback([0, 0, 0, 0, 0]);
     setPhase('input');
     solverRef.current = null;
-    setFocusCount(c => c + 1);
   }
 
   // --- Global keyboard ---
@@ -285,7 +281,6 @@ export default function RescueMode() {
                   isFull={isFull}
                   isValid={isValid}
                   onSubmit={addWord}
-                  focusTrigger={focusCount}
                 />
                 <button className="solve-btn" onClick={addWord} disabled={!isValid}>
                   Add
