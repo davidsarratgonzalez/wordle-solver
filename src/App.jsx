@@ -7,7 +7,6 @@ import { computePattern, ALL_GREEN } from './solver/feedback.js';
 import { Solver } from './solver/solver.js';
 import { WORDS } from './solver/words.js';
 import { ALLOWED } from './solver/allowed.js';
-import { firstGuessReady } from './solver/precompute.js';
 import './styles/wordle.css';
 import './App.css';
 
@@ -18,7 +17,6 @@ export default function App() {
   const [solving, setSolving] = useState(false);
   const [result, setResult] = useState(null); // { won, turns }
   const [resetKey, setResetKey] = useState(0);
-  const [hardMode, setHardMode] = useState(false);
   const timersRef = useRef([]);
 
   const fullPool = useMemo(() => [...WORDS, ...ALLOWED], []);
@@ -26,15 +24,13 @@ export default function App() {
   const ROW_GAP = 200;
   const ROW_CYCLE = ROW_DURATION + ROW_GAP;
 
-  const handleSolve = useCallback(async (secretWord) => {
+  const handleSolve = useCallback((secretWord) => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
     setResult(null);
     setSolving(true);
 
-    await firstGuessReady[hardMode ? 'extended' : 'solutions'];
-
-    const solver = new Solver(WORDS, hardMode ? fullPool : null);
+    const solver = new Solver(WORDS, fullPool);
     const results = [];
 
     for (let turn = 1; turn <= 6; turn++) {
@@ -63,7 +59,7 @@ export default function App() {
         timersRef.current.push(doneTimer);
       }
     });
-  }, [hardMode, fullPool]);
+  }, [fullPool]);
 
   const handleReset = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
@@ -126,21 +122,6 @@ export default function App() {
               </p>
               <WordInput key={resetKey} onSolve={handleSolve} disabled={solving || !!result} />
 
-              <label className="toggle-label">
-                <input
-                  type="checkbox"
-                  checked={hardMode}
-                  onChange={(e) => setHardMode(e.target.checked)}
-                  disabled={solving || !!result}
-                />
-                <span>Extended guess pool</span>
-              </label>
-              <p className="toggle-desc">
-                {hardMode
-                  ? 'Solver can guess from all 12,972 valid words'
-                  : 'Solver guesses only from the 2,315 solution words'}
-              </p>
-
               {result && (
                 <button className="solve-btn" onClick={handleReset} style={{ marginTop: 16 }}>
                   Try another
@@ -158,15 +139,9 @@ export default function App() {
             </section>
           </>
         ) : mode === 'assist' ? (
-          <AssistMode
-            hardMode={hardMode}
-            onHardModeChange={setHardMode}
-          />
+          <AssistMode />
         ) : (
-          <RescueMode
-            hardMode={hardMode}
-            onHardModeChange={setHardMode}
-          />
+          <RescueMode />
         )}
       </main>
 

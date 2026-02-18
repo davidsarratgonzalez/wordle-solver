@@ -184,6 +184,15 @@
   max-width: 280px;
 }
 
+.toggle-label.disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.toggle-desc.disabled {
+  opacity: 0.4;
+}
+
 /* --- Assistant Mode --- */
 .assist-panel {
   max-width: 400px;

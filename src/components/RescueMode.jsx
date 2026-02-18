@@ -3,11 +3,11 @@ import { ALL_GREEN } from '../solver/feedback.js';
 import { Solver } from '../solver/solver.js';
 import { WORDS } from '../solver/words.js';
 import { ALLOWED } from '../solver/allowed.js';
-import { firstGuessReady } from '../solver/precompute.js';
 
 const FEEDBACK_CLASSES = ['grey', 'yellow', 'green'];
 const TILE_STATES = ['grey', 'yellow', 'green'];
 const allValidWords = new Set([...WORDS, ...ALLOWED]);
+const FULL_POOL = [...WORDS, ...ALLOWED];
 
 function patternToStates(pattern) {
   const states = new Array(5);
@@ -22,8 +22,8 @@ function encodeFeedback(fb) {
   return fb[0] * 81 + fb[1] * 27 + fb[2] * 9 + fb[3] * 3 + fb[4];
 }
 
-function replaySolver(pool, history) {
-  const solver = new Solver(WORDS, pool);
+function replaySolver(history) {
+  const solver = new Solver(WORDS, FULL_POOL);
   for (const { guess, pattern } of history) {
     solver.update(guess, pattern);
   }
@@ -33,8 +33,9 @@ function replaySolver(pool, history) {
 /**
  * Rescue mode: user types past guesses, clicks grid tiles to set colors,
  * then the solver picks up from there.
+ * Always uses the extended guess pool.
  */
-export default function RescueMode({ hardMode, onHardModeChange }) {
+export default function RescueMode() {
   // --- Input phase ---
   const [entries, setEntries] = useState([]);  // [{guess, feedback: [0,0,0,0,0]}]
   const [letters, setLetters] = useState(['', '', '', '', '']);
@@ -139,20 +140,13 @@ export default function RescueMode({ hardMode, onHardModeChange }) {
   }
 
   // --- Rescue ---
-  function getPool() {
-    return hardMode ? [...WORDS, ...ALLOWED] : null;
-  }
-
-  async function handleRescue() {
+  function handleRescue() {
     const history = entries.map(e => ({
       guess: e.guess,
       pattern: encodeFeedback(e.feedback),
     }));
 
-    const pool = getPool();
-    await firstGuessReady[pool ? 'extended' : 'solutions'];
-
-    const solver = replaySolver(pool, history);
+    const solver = replaySolver(history);
     solverRef.current = solver;
 
     if (solver.remaining === 0) {
@@ -229,7 +223,7 @@ export default function RescueMode({ hardMode, onHardModeChange }) {
       ...entries.map(e => ({ guess: e.guess, pattern: encodeFeedback(e.feedback) })),
       ...prev,
     ];
-    const solver = replaySolver(getPool(), allHistory);
+    const solver = replaySolver(allHistory);
     solverRef.current = solver;
     setCurrentGuess(solver.bestGuess(allHistory.length + 1));
     setSolveFeedback([0, 0, 0, 0, 0]);
@@ -315,20 +309,6 @@ export default function RescueMode({ hardMode, onHardModeChange }) {
                 </button>
               )}
             </div>
-
-            <label className="toggle-label">
-              <input
-                type="checkbox"
-                checked={hardMode}
-                onChange={(e) => onHardModeChange(e.target.checked)}
-              />
-              <span>Extended guess pool</span>
-            </label>
-            <p className="toggle-desc">
-              {hardMode
-                ? 'Solver can guess from all 12,972 valid words'
-                : 'Solver guesses only from the 2,315 solution words'}
-            </p>
           </>
         )}
 
@@ -352,19 +332,19 @@ export default function RescueMode({ hardMode, onHardModeChange }) {
           <>
             <div className={`result-msg ${phase === 'solved' ? 'win' : 'lose'}`}>
               {phase === 'solved' && `Rescued in ${entries.length + solverRows.length} total turns!`}
-              {phase === 'failed' && 'Failed — no turns left'}
-              {phase === 'impossible' && 'No words match — check your colors'}
+              {phase === 'failed' && 'Failed, no turns left'}
+              {phase === 'impossible' && 'No words match, check your colors'}
             </div>
             <button className="solve-btn" onClick={handleFullReset}>Try again</button>
           </>
         )}
       </section>
 
-      {/* Right panel — grid */}
+      {/* Right panel */}
       <section className="panel panel-right">
         <h2>Solver</h2>
         <div className="solver-grid">
-          {/* User entries — clickable during input phase */}
+          {/* User entries */}
           {entries.map((entry, r) => (
             <div className="grid-row" key={`h${r}`}>
               {entry.guess.split('').map((letter, c) => (
@@ -397,7 +377,7 @@ export default function RescueMode({ hardMode, onHardModeChange }) {
             );
           })}
 
-          {/* Solver current row — clickable */}
+          {/* Solver current row */}
           {playing && (
             <div className="grid-row">
               {currentGuess.split('').map((letter, c) => (

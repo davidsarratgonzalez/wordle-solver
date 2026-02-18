@@ -3,10 +3,10 @@ import { ALL_GREEN } from '../solver/feedback.js';
 import { Solver } from '../solver/solver.js';
 import { WORDS } from '../solver/words.js';
 import { ALLOWED } from '../solver/allowed.js';
-import { firstGuessReady } from '../solver/precompute.js';
 
 const FEEDBACK_CLASSES = ['grey', 'yellow', 'green'];
 const TILE_STATES = ['grey', 'yellow', 'green'];
+const FULL_POOL = [...WORDS, ...ALLOWED];
 
 function patternToStates(pattern) {
   const states = new Array(5);
@@ -24,8 +24,8 @@ function encodePattern(fb) {
 /**
  * Recreate a Solver and replay a list of past turns.
  */
-function replaySolver(pool, history) {
-  const solver = new Solver(WORDS, pool);
+function replaySolver(history) {
+  const solver = new Solver(WORDS, FULL_POOL);
   for (const { guess, pattern } of history) {
     solver.update(guess, pattern);
   }
@@ -34,24 +34,19 @@ function replaySolver(pool, history) {
 
 /**
  * Assistant mode: two-panel layout matching Demo.
- * Left: controls (Start, Submit, Back, Reset, toggle).
+ * Left: controls (Start, Submit, Back, Reset).
  * Right: solver grid with clickable tiles.
+ * Always uses the extended guess pool.
  */
-export default function AssistMode({ hardMode, onHardModeChange }) {
+export default function AssistMode() {
   const solverRef = useRef(null);
   const [rows, setRows] = useState([]);           // completed {guess, pattern}
   const [currentGuess, setCurrentGuess] = useState('');
   const [feedback, setFeedback] = useState([0, 0, 0, 0, 0]);
   const [status, setStatus] = useState('idle');    // idle | playing | solved | failed | impossible
 
-  function getPool() {
-    return hardMode ? [...WORDS, ...ALLOWED] : null;
-  }
-
-  async function handleStart() {
-    const pool = getPool();
-    await firstGuessReady[pool ? 'extended' : 'solutions'];
-    const solver = new Solver(WORDS, pool);
+  function handleStart() {
+    const solver = new Solver(WORDS, FULL_POOL);
     solverRef.current = solver;
     setRows([]);
     setCurrentGuess(solver.bestGuess(1));
@@ -106,7 +101,7 @@ export default function AssistMode({ hardMode, onHardModeChange }) {
     setRows(prev);
 
     // Rebuild solver from scratch with the remaining history
-    const solver = replaySolver(getPool(), prev);
+    const solver = replaySolver(prev);
     solverRef.current = solver;
 
     const turn = prev.length + 1;
@@ -142,32 +137,17 @@ export default function AssistMode({ hardMode, onHardModeChange }) {
 
   return (
     <>
-      {/* Left panel — controls */}
+      {/* Left panel */}
       <section className="panel panel-left">
         <h2>Assistant</h2>
         <p className="panel-desc">
-          The solver suggests words for your Wordle game — click tiles to report the colors you got back
+          The solver suggests words for your Wordle game, click tiles to report the colors you got back
         </p>
 
         {status === 'idle' && (
-          <>
-            <label className="toggle-label">
-              <input
-                type="checkbox"
-                checked={hardMode}
-                onChange={(e) => onHardModeChange(e.target.checked)}
-              />
-              <span>Extended guess pool</span>
-            </label>
-            <p className="toggle-desc">
-              {hardMode
-                ? 'Solver can guess from all 12,972 valid words'
-                : 'Solver guesses only from the 2,315 solution words'}
-            </p>
-            <button className="solve-btn" onClick={handleStart}>
-              Start
-            </button>
-          </>
+          <button className="solve-btn" onClick={handleStart}>
+            Start
+          </button>
         )}
 
         {playing && (
@@ -201,7 +181,7 @@ export default function AssistMode({ hardMode, onHardModeChange }) {
             <div className={`result-msg ${status === 'solved' ? 'win' : 'lose'}`}>
               {status === 'solved' && `Solved in ${rows.length} turn${rows.length > 1 ? 's' : ''}!`}
               {status === 'failed' && 'Failed after 6 turns'}
-              {status === 'impossible' && 'No words match — check your colors'}
+              {status === 'impossible' && 'No words match, check your colors'}
             </div>
             <button className="solve-btn" onClick={handleReset}>
               Play again
@@ -210,7 +190,7 @@ export default function AssistMode({ hardMode, onHardModeChange }) {
         )}
       </section>
 
-      {/* Right panel — grid */}
+      {/* Right panel */}
       <section className="panel panel-right">
         <h2>Solver</h2>
         <div className="solver-grid">
@@ -230,7 +210,7 @@ export default function AssistMode({ hardMode, onHardModeChange }) {
             );
           })}
 
-          {/* Current row — clickable */}
+          {/* Current row */}
           {playing && (
             <div className="grid-row">
               {currentGuess.split('').map((letter, c) => (
