@@ -108,7 +108,6 @@ export default function WordInput({ onSolve, disabled }) {
             ref={inputRefs[i]}
             className={cellClass(i)}
             type="text"
-            maxLength={1}
             value={letter.toUpperCase()}
             onChange={(e) => handleChange(i, e.target.value)}
             onKeyDown={(e) => handleKeyDown(i, e)}

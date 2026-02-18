@@ -360,7 +360,7 @@ export default function RescueMode() {
                       ref={inputRefs[i]}
                       className={`letter-cell ${isFull ? (isValid ? 'valid' : 'invalid') : ''}`}
                       type="text"
-                      maxLength={1}
+
                       value={letter.toUpperCase()}
                       onChange={(e) => handleChange(i, e.target.value)}
                       onKeyDown={(e) => handleInputKeyDown(i, e)}
