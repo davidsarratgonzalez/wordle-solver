@@ -183,9 +183,16 @@ export default function AssistMode() {
               {status === 'failed' && 'Failed after 6 turns'}
               {status === 'impossible' && 'No words match, check your colors'}
             </div>
-            <button className="solve-btn" onClick={handleReset}>
-              Play again
-            </button>
+            <div className="assist-buttons">
+              {status === 'impossible' && (
+                <button className="solve-btn secondary" onClick={handleBack}>
+                  Back
+                </button>
+              )}
+              <button className="solve-btn" onClick={handleReset}>
+                Play again
+              </button>
+            </div>
           </>
         )}
       </section>

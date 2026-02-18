@@ -335,7 +335,14 @@ export default function RescueMode() {
               {phase === 'failed' && 'Failed, no turns left'}
               {phase === 'impossible' && 'No words match, check your colors'}
             </div>
-            <button className="solve-btn" onClick={handleFullReset}>Try again</button>
+            <div className="assist-buttons">
+              {phase === 'impossible' && (
+                <button className="solve-btn secondary" onClick={handleSolverBack}>
+                  Back
+                </button>
+              )}
+              <button className="solve-btn" onClick={handleFullReset}>Try again</button>
+            </div>
           </>
         )}
       </section>
