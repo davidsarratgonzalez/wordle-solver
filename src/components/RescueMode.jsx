@@ -3,6 +3,7 @@ import { ALL_GREEN } from '../solver/feedback.js';
 import { Solver } from '../solver/solver.js';
 import { WORDS } from '../solver/words.js';
 import { ALLOWED } from '../solver/allowed.js';
+import { firstGuessReady } from '../solver/precompute.js';
 
 const FEEDBACK_CLASSES = ['grey', 'yellow', 'green'];
 const TILE_STATES = ['grey', 'yellow', 'green'];
@@ -142,13 +143,16 @@ export default function RescueMode({ hardMode, onHardModeChange }) {
     return hardMode ? [...WORDS, ...ALLOWED] : null;
   }
 
-  function handleRescue() {
+  async function handleRescue() {
     const history = entries.map(e => ({
       guess: e.guess,
       pattern: encodeFeedback(e.feedback),
     }));
 
-    const solver = replaySolver(getPool(), history);
+    const pool = getPool();
+    await firstGuessReady[pool ? 'extended' : 'solutions'];
+
+    const solver = replaySolver(pool, history);
     solverRef.current = solver;
 
     if (solver.remaining === 0) {

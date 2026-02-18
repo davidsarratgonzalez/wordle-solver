@@ -3,6 +3,7 @@ import { ALL_GREEN } from '../solver/feedback.js';
 import { Solver } from '../solver/solver.js';
 import { WORDS } from '../solver/words.js';
 import { ALLOWED } from '../solver/allowed.js';
+import { firstGuessReady } from '../solver/precompute.js';
 
 const FEEDBACK_CLASSES = ['grey', 'yellow', 'green'];
 const TILE_STATES = ['grey', 'yellow', 'green'];
@@ -47,8 +48,9 @@ export default function AssistMode({ hardMode, onHardModeChange }) {
     return hardMode ? [...WORDS, ...ALLOWED] : null;
   }
 
-  function handleStart() {
+  async function handleStart() {
     const pool = getPool();
+    await firstGuessReady[pool ? 'extended' : 'solutions'];
     const solver = new Solver(WORDS, pool);
     solverRef.current = solver;
     setRows([]);

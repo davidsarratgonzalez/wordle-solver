@@ -7,6 +7,7 @@ import { computePattern, ALL_GREEN } from './solver/feedback.js';
 import { Solver } from './solver/solver.js';
 import { WORDS } from './solver/words.js';
 import { ALLOWED } from './solver/allowed.js';
+import { firstGuessReady } from './solver/precompute.js';
 import './styles/wordle.css';
 import './App.css';
 
@@ -25,11 +26,13 @@ export default function App() {
   const ROW_GAP = 200;
   const ROW_CYCLE = ROW_DURATION + ROW_GAP;
 
-  const handleSolve = useCallback((secretWord) => {
+  const handleSolve = useCallback(async (secretWord) => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
     setResult(null);
     setSolving(true);
+
+    await firstGuessReady[hardMode ? 'extended' : 'solutions'];
 
     const solver = new Solver(WORDS, hardMode ? fullPool : null);
     const results = [];

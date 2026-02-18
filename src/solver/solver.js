@@ -37,7 +37,7 @@ export class Solver {
     this.guessPool = guessPool || null;
     this.candidates = [...words];
     this.history = [];
-    this._firstGuessCache = null;
+    this._poolKey = guessPool ? 'extended' : 'solutions';
   }
 
   /** Reset for a new game. */
@@ -57,9 +57,10 @@ export class Solver {
     if (n === 1) return this.candidates[0];
     if (n === 2) return this.candidates[0];
 
-    // Cache first guess (always the same)
-    if (turn === 1 && n === this.words.length && this._firstGuessCache) {
-      return this._firstGuessCache;
+    // Check global first-guess cache
+    if (turn === 1 && n === this.words.length) {
+      const cached = Solver._globalFirstGuess.get(this._poolKey);
+      if (cached) return cached;
     }
 
     const pool = this.guessPool || this.candidates;
@@ -81,9 +82,9 @@ export class Solver {
       }
     }
 
-    // Cache first guess
+    // Store in global cache
     if (turn === 1 && n === this.words.length) {
-      this._firstGuessCache = bestGuess;
+      Solver._globalFirstGuess.set(this._poolKey, bestGuess);
     }
 
     return bestGuess;
@@ -104,3 +105,7 @@ export class Solver {
     return this.candidates.length;
   }
 }
+
+// Global first-guess cache shared across all Solver instances.
+// Key: 'solutions' | 'extended', Value: best first guess string.
+Solver._globalFirstGuess = new Map();
