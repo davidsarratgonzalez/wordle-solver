@@ -71,7 +71,10 @@ export default function SolverGrid({ guesses, revealedCount, neonColors, trumpet
             <div className="tile" key={c}>
               <div className="tile-inner trumpet-cell">
                 {state !== 'hidden' && (
-                  <span className={`trumpet-emoji${state === 'playing' ? ' playing' : ''}`}>🎺</span>
+                  <span
+                    className={`trumpet-emoji${state === 'playing' ? ' playing' : ''}`}
+                    style={{ '--intensity': ti + 1 }}
+                  >🎺</span>
                 )}
               </div>
             </div>
