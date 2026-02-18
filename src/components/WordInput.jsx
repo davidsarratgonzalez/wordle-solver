@@ -114,9 +114,8 @@ export default function WordInput({ onSolve, disabled }) {
         ))}
       </div>
 
-      <div className={`validation-msg ${isValid ? 'ok' : ''}`}>
+      <div className="validation-msg">
         {isFull && !isValid && 'Not a valid Wordle word'}
-        {isValid && 'Valid word!'}
       </div>
 
       <button

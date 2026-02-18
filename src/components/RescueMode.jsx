@@ -272,7 +272,7 @@ export default function RescueMode() {
         {phase === 'input' && (
           <>
             {canAddMore && (
-              <>
+              <div className="word-input-container">
                 <div className="input-row">
                   {letters.map((letter, i) => (
                     <input
@@ -290,11 +290,13 @@ export default function RescueMode() {
                     />
                   ))}
                 </div>
-
                 <div className="validation-msg">
                   {isFull && !isValid && 'Not a valid Wordle word'}
                 </div>
-              </>
+                <button className="solve-btn" onClick={addWord} disabled={!isValid}>
+                  Add
+                </button>
+              </div>
             )}
 
             <div className="assist-buttons">
