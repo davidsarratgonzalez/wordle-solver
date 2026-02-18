@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import WordInput from './components/WordInput.jsx';
 import SolverGrid, { ROW_DURATION } from './components/SolverGrid.jsx';
 import AssistMode from './components/AssistMode.jsx';
+import RescueMode from './components/RescueMode.jsx';
 import { computePattern, ALL_GREEN } from './solver/feedback.js';
 import { Solver } from './solver/solver.js';
 import { WORDS } from './solver/words.js';
@@ -10,7 +11,7 @@ import './styles/wordle.css';
 import './App.css';
 
 export default function App() {
-  const [mode, setMode] = useState('demo'); // 'demo' | 'assist'
+  const [mode, setMode] = useState('demo'); // 'demo' | 'assist' | 'rescue'
   const [guesses, setGuesses] = useState([]);
   const [revealedCount, setRevealedCount] = useState(0);
   const [solving, setSolving] = useState(false);
@@ -103,6 +104,12 @@ export default function App() {
           >
             Assistant
           </button>
+          <button
+            className={`mode-tab ${mode === 'rescue' ? 'active' : ''}`}
+            onClick={() => handleModeChange('rescue')}
+          >
+            Rescue
+          </button>
         </div>
       </header>
 
@@ -147,8 +154,13 @@ export default function App() {
               </div>
             </section>
           </>
-        ) : (
+        ) : mode === 'assist' ? (
           <AssistMode
+            hardMode={hardMode}
+            onHardModeChange={setHardMode}
+          />
+        ) : (
+          <RescueMode
             hardMode={hardMode}
             onHardModeChange={setHardMode}
           />
